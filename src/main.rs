@@ -1,5 +1,6 @@
 use cursive::align::HAlign;
 use cursive::views::{Dialog, DialogFocus};
+use cursive::Cursive;
 
 fn main() {
     let mut siv = cursive::default();
@@ -7,7 +8,7 @@ fn main() {
     let mut dialog = Dialog::text("welcome to lifelog, a log of your uneventful life.")
         .button("entries", |_s| {})
         .button("new entry", |_s| {})
-        .button("about", |_s| {})
+        .button("about", show_about)
         .button("quit", |s| s.quit())
         .h_align(HAlign::Center);
 
@@ -17,4 +18,10 @@ fn main() {
     siv.add_layer(dialog.title("lifelog."));
 
     siv.run();
+}
+
+fn show_about(s: &mut Cursive) {
+    s.add_layer(Dialog::info(
+        "a simple diary that you can use from your terminal.",
+    ));
 }
