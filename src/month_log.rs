@@ -88,9 +88,14 @@ impl MonthLog {
 
     /// Return the user entry for today.
     pub fn get_todays_entry(&self) -> &Entry {
-        let day = Local::today().format("%d").to_string();
-        let day: usize = day.parse().unwrap();
-        self.get_entry(day)
+        let day = Local::today().day();
+        self.get_entry(day as usize)
+    }
+
+    /// Update today's diary entry
+    pub fn update_todays_entry(&mut self, rating: i8, text: String) {
+        let day = Local::today().day() as usize;
+        self.entries[day - 1] = Entry { rating, text };
     }
 
     /// Retrun the path at which this `MonthLog` should be saved.
