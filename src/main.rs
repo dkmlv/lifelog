@@ -3,9 +3,11 @@ use std::rc::Rc;
 
 use chrono::{Date, Datelike, Local};
 use cursive::align::HAlign;
+use cursive::event::Key;
 use cursive::view::{Nameable, Resizable};
 use cursive::views::{
-    Dialog, DialogFocus, HideableView, LinearLayout, RadioGroup, ScrollView, TextArea, TextView,
+    Dialog, DialogFocus, HideableView, LinearLayout, OnEventView, RadioGroup, ScrollView, TextArea,
+    TextView,
 };
 use cursive::{Cursive, XY};
 use cursive_calendar_view::{CalendarView, EnglishLocale};
@@ -17,6 +19,8 @@ use month_log::MonthLog;
 
 fn main() {
     let mut siv = cursive::default();
+
+    siv.add_global_callback('q', Cursive::quit);
 
     let mut dialog = Dialog::text("welcome to lifelog, a log of your uneventful life.")
         .title("lifelog")
@@ -34,6 +38,21 @@ fn main() {
     siv.run();
 }
 
+// ----------------------------------------------------------------------------
+fn hide_main_menu(s: &mut Cursive) {
+    s.call_on_name("main", |view: &mut HideableView<Dialog>| {
+        view.hide();
+    });
+}
+
+fn unhide_main_menu(s: &mut Cursive) {
+    s.pop_layer();
+    s.call_on_name("main", |view: &mut HideableView<Dialog>| {
+        view.unhide();
+    });
+}
+// ----------------------------------------------------------------------------
+
 // ------------------------------ Entries Button ------------------------------
 fn entries(s: &mut Cursive) {
     hide_main_menu(s);
@@ -46,7 +65,6 @@ fn entries(s: &mut Cursive) {
     let (earliest_date, latest_date) = calendar::earliest_latest();
     calendar.set_earliest_date(Some(earliest_date));
     calendar.set_latest_date(Some(latest_date));
-
     calendar.set_on_select(move |siv: &mut Cursive, date: &Date<Local>| {
         siv.call_on_name("preview", |view: &mut TextView| {
             let mut log = month_log_clone.borrow_mut();
@@ -66,35 +84,21 @@ fn entries(s: &mut Cursive) {
 
     let log = month_log.borrow();
     let today_entry = log.get_todays_entry();
-
     let preview = Dialog::around(ScrollView::new(
         TextView::new(today_entry.to_string()).with_name("preview"),
     ))
     .title("preview")
-    .fixed_size(XY { x: 64, y: 19 });
+    .fixed_size(XY { x: 64, y: 20 });
 
+    let calendar = Dialog::around(calendar).title("select date");
     let statistics = TextView::new(log.get_statistics()).with_name("statistics");
-    let vertical = LinearLayout::vertical()
-        .child(Dialog::around(calendar).title("select date"))
+    let column = LinearLayout::vertical()
+        .child(OnEventView::new(calendar).on_event(Key::Esc, unhide_main_menu))
+        .child(TextView::new(" press <ESC> to go back."))
         .child(Dialog::around(statistics));
 
-    let horizontal = LinearLayout::horizontal().child(vertical).child(preview);
-
-    s.add_layer(horizontal);
-}
-// ----------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------
-fn hide_main_menu(s: &mut Cursive) {
-    s.call_on_name("main", |view: &mut HideableView<Dialog>| {
-        view.hide();
-    });
-}
-
-fn unhide_main_menu(s: &mut Cursive) {
-    s.call_on_name("main", |view: &mut HideableView<Dialog>| {
-        view.unhide();
-    });
+    let layout = LinearLayout::horizontal().child(column).child(preview);
+    s.add_layer(layout);
 }
 // ----------------------------------------------------------------------------
 
@@ -109,14 +113,12 @@ fn new_entry(s: &mut Cursive) {
                 .title("how was your day?")
                 .content(TextArea::new().with_name("diary_entry"))
                 .button("Ok", ask_rating)
+                .button("Cancel", unhide_main_menu)
                 .fixed_size(XY { x: 64, y: 20 }),
         );
     } else {
         s.add_layer(
-            Dialog::text("you already have an entry for today.").button("Ok", |s| {
-                s.pop_layer();
-                unhide_main_menu(s);
-            }),
+            Dialog::text("you already have an entry for today.").button("Ok", unhide_main_menu),
         );
     }
 }
@@ -161,10 +163,7 @@ fn save_entry(s: &mut Cursive, rating: i8, text: &str) {
     month_log.save_to_disk();
 
     s.pop_layer();
-    s.add_layer(Dialog::text("entry saved!").button("Ok", |s| {
-        s.pop_layer();
-        unhide_main_menu(s);
-    }));
+    s.add_layer(Dialog::text("entry saved!").button("Ok", unhide_main_menu));
 }
 // ----------------------------------------------------------------------------
 

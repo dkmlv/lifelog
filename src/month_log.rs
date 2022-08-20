@@ -187,6 +187,7 @@ impl fmt::Display for Entry {
             write!(
                 f,
                 r#"
+
                       wow, such empty
                                        ,
                 ,-.       _,---._ __  / \
