@@ -4,7 +4,7 @@ use std::fs::{self, File};
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
-use chrono::prelude::*;
+use chrono::{Local, Datelike};
 use cursive::reexports::time::{util::days_in_year_month, Month as tMonth};
 use etcetera::base_strategy::{choose_base_strategy, BaseStrategy};
 use serde::{Deserialize, Serialize};
