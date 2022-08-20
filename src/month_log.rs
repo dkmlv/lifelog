@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+use std::fmt;
 use std::fs::{self, File};
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -55,12 +57,11 @@ impl MonthLog {
         serde_json::from_str(&data).expect("failed to parse json file")
     }
 
-    /// Return the `MonthLog` for the current month.
+    /// Return the `MonthLog` for the given `month_year` (eg August/2022).
     ///
     /// If the JSON file from which the object can be constructed does not exist,
     /// construct a brand new object.
-    pub fn current_month_log() -> Self {
-        let month_year = Local::today().format("%B/%Y").to_string();
+    pub fn get_month_log(month_year: &str) -> Self {
         let [month, year]: [&str; 2] = month_year
             .split("/")
             .collect::<Vec<&str>>()
@@ -81,6 +82,12 @@ impl MonthLog {
         }
     }
 
+    /// Return the `MonthLog` for the current month and year.
+    pub fn current_month_log() -> Self {
+        let month_year = Local::today().format("%B/%Y").to_string();
+        Self::get_month_log(&month_year)
+    }
+
     /// Return the user entry for the given day.
     pub fn get_entry(&self, day: usize) -> &Entry {
         &self.entries[day - 1]
@@ -92,13 +99,13 @@ impl MonthLog {
         self.get_entry(day as usize)
     }
 
-    /// Update today's diary entry
+    /// Update today's diary entry.
     pub fn update_todays_entry(&mut self, rating: i8, text: String) {
         let day = Local::today().day() as usize;
         self.entries[day - 1] = Entry { rating, text };
     }
 
-    /// Retrun the path at which this `MonthLog` should be saved.
+    /// Return the path at which this `MonthLog` should be saved.
     fn path(&self) -> PathBuf {
         data_dir()
             .join(self.year.to_string())
@@ -110,6 +117,35 @@ impl MonthLog {
         let data = serde_json::to_string(self).unwrap();
         fs::write(self.path(), data).unwrap();
     }
+
+    /// Return a string with the object's month and year (eg August/2022).
+    pub fn month_year(&self) -> String {
+        format!("{}/{}", &self.month, &self.year)
+    }
+
+    /// Get statistics for the MonthLog (how many days are rated what number).
+    pub fn get_statistics(&self) -> String {
+        let mut data: HashMap<i8, u8> = HashMap::new();
+
+        for i in -2..3 {
+            data.insert(i, 0);
+        }
+        data.insert(42, 0);
+
+        for entry in &self.entries {
+            data.entry(entry.get_rating()).and_modify(|e| *e += 1);
+        }
+
+        format!(
+            "+2 (awesome) - {}\n\
+            +1 - {}\n\
+            0 (okay) - {}\n\
+            -1 - {}\n\
+            -2 (horrible) - {}\n\n\
+            no data - {}",
+            data[&2], data[&1], data[&0], data[&-1], data[&-2], data[&42]
+        )
+    }
 }
 
 /// An entry for a given day with the rating for the day and some user text.
@@ -118,11 +154,11 @@ pub struct Entry {
     /// Rating for a given day.
     ///
     /// User will be able to choose on a scale of `-2` to `2`.
-    /// * `-2` - horrible
-    /// * `-1` - bad
+    /// * `+2` - awesome
+    /// * `+1` - good
     /// * `0` - okay
-    /// * `1` - good
-    /// * `2` - awesome
+    /// * `-1` - bad
+    /// * `-2` - horrible
     ///
     /// * `42` - default value for an empty entry.
     ///
@@ -145,7 +181,44 @@ impl Default for Entry {
     }
 }
 
+impl fmt::Display for Entry {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.is_default() {
+            write!(
+                f,
+                r#"
+                      wow, such empty
+                                       ,
+                ,-.       _,---._ __  / \
+               /  )    .-'       `./ /   \
+              (  (   ,'            `/    /|
+               \  `-"             \'\   / |
+                `.              ,  \ \ /  |
+                 /`.          ,'-`----Y   |
+                (            ;        |   '
+                |  ,-.    ,-'         |  /
+                |  | (   |            | /
+                )  |  \  `.___________|/
+                `--'   `--'
+"#
+            )
+        } else {
+            write!(f, "rating: {}\n\n{}", self.rating, self.text)
+        }
+    }
+}
+
 impl Entry {
+    /// Get the value stored in the text field.
+    fn get_text(&self) -> &str {
+        &self.text
+    }
+
+    /// Get the value stored in the rating field.
+    fn get_rating(&self) -> i8 {
+        self.rating
+    }
+
     /// Check if the entry is empty.
     pub fn is_default(&self) -> bool {
         *self == Entry::default()
@@ -170,7 +243,7 @@ impl Entry {
 ///     ├── February.json
 ///     └── ...
 /// ```
-fn data_dir() -> PathBuf {
+pub fn data_dir() -> PathBuf {
     let strategy = choose_base_strategy().expect("failed to find config directory");
     let mut path = strategy.data_dir();
     path.push("lifelog");
