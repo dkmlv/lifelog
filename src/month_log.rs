@@ -4,7 +4,7 @@ use std::fs::{self, File};
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
-use chrono::{Local, Datelike};
+use chrono::{Datelike, Local};
 use cursive::reexports::time::{util::days_in_year_month, Month as tMonth};
 use etcetera::base_strategy::{choose_base_strategy, BaseStrategy};
 use serde::{Deserialize, Serialize};
@@ -41,7 +41,7 @@ impl MonthLog {
         MonthLog {
             month: month.to_string(),
             year: year.parse().unwrap(),
-            entries: entries,
+            entries,
         }
     }
 
@@ -63,14 +63,16 @@ impl MonthLog {
     /// construct a brand new object.
     pub fn get_month_log(month_year: &str) -> Self {
         let [month, year]: [&str; 2] = month_year
-            .split("/")
+            .split('/')
             .collect::<Vec<&str>>()
             .try_into()
             .unwrap();
 
-        let path = data_dir().join(year);
+        let data_directory = data_dir();
+
+        let path = data_directory.join(year);
         if !path.exists() {
-            fs::create_dir(&path).expect("failed to create directory in data dir");
+            return Self::new(month, year);
         }
 
         let data_file = path.join(format!("{}.json", month));
@@ -113,9 +115,16 @@ impl MonthLog {
     }
 
     /// Create and save JSON file to disk by serializing data with `serde`.
+    ///
+    /// If the directory for the year's entries does not exist, create it.
     pub fn save_to_disk(&self) {
         let data = serde_json::to_string(self).unwrap();
-        fs::write(self.path(), data).unwrap();
+        let path = self.path();
+        let parent_dir = path.parent().unwrap();
+        if !parent_dir.exists() {
+            fs::create_dir(parent_dir).expect("failed to create directory in data dir");
+        };
+        fs::write(path, data).unwrap();
     }
 
     /// Return a string with the object's month and year (eg August/2022).
@@ -228,6 +237,7 @@ impl Entry {
 
 /// Return the location of the data directory.
 ///
+/// If the data directory does not exist, create it.
 /// Choice of the data directory location is dependent on the underlying os.
 ///
 /// All of the user's diary entries will be saved in `.json` files.
@@ -248,5 +258,9 @@ pub fn data_dir() -> PathBuf {
     let strategy = choose_base_strategy().expect("failed to find config directory");
     let mut path = strategy.data_dir();
     path.push("lifelog");
+
+    if !path.exists() {
+        fs::create_dir(&path).expect("failed to create data directory");
+    }
     path
 }
