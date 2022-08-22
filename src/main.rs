@@ -20,6 +20,12 @@ use month_log::MonthLog;
 fn main() {
     let mut siv = cursive::default();
 
+    let theme_file = month_log::data_dir().join("6174").join("theme.toml");
+    if theme_file.exists() {
+        siv.load_theme_file(theme_file)
+            .expect("invalid theme.toml file");
+    }
+
     siv.add_global_callback('q', Cursive::quit);
 
     let mut dialog = Dialog::text("welcome to lifelog, a log of your uneventful life.")
