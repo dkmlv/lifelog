@@ -91,20 +91,24 @@ impl MonthLog {
     }
 
     /// Return the user entry for the given day.
-    pub fn get_entry(&self, day: usize) -> &Entry {
-        &self.entries[day - 1]
+    pub fn get_entry(&self, day: u32) -> &Entry {
+        &self.entries[day as usize - 1]
     }
 
     /// Return the user entry for today.
     pub fn get_todays_entry(&self) -> &Entry {
         let day = Local::today().day();
-        self.get_entry(day as usize)
+        self.get_entry(day)
     }
 
-    /// Update today's diary entry.
-    pub fn update_todays_entry(&mut self, rating: i8, text: String) {
-        let day = Local::today().day() as usize;
-        self.entries[day - 1] = Entry { rating, text };
+    /// Update diary entry for the given day.
+    pub fn update_entry(&mut self, day: u32, rating: i8, text: String) {
+        self.entries[day as usize - 1] = Entry { rating, text };
+    }
+
+    /// Change the entry for the given day to a default entry.
+    pub fn delete_entry(&mut self, day: u32) {
+        self.entries[day as usize - 1] = Entry::default();
     }
 
     /// Return the path at which this `MonthLog` should be saved.
@@ -220,7 +224,7 @@ impl fmt::Display for Entry {
 
 impl Entry {
     /// Get the value stored in the text field.
-    fn get_text(&self) -> &str {
+    pub fn get_text(&self) -> &str {
         &self.text
     }
 
