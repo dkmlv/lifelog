@@ -170,9 +170,24 @@ fn new_entry(s: &mut Cursive) {
 // ------------------------------- About Button -------------------------------
 // ============================================================================
 fn show_about(s: &mut Cursive) {
-    s.add_layer(Dialog::info(
-        "a simple diary that you can use from your terminal.",
-    ));
+    s.add_layer(
+        Dialog::info(format!(
+            "a simple diary that you can use from your terminal.\n\n\
+        - this is designed for you to only have 1 entry per day, in which \
+        you rate how your day went.\n\
+        - you can press <q> anytime to quit the program.\n\
+        - all the diary entries are saved in: '{}'\n\
+        - you can customize the program by creating your own theme file at: '{}'\n\
+        (for more info on customization, check 'https://tinyurl.com/fpc2yau2')",
+            month_log::data_dir().to_str().unwrap(),
+            month_log::data_dir()
+                .join("6174")
+                .join("theme.toml")
+                .to_str()
+                .unwrap()
+        ))
+        .max_width(80),
+    );
 }
 
 // ============================================================================
