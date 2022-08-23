@@ -20,7 +20,11 @@ use month_log::MonthLog;
 fn main() {
     let mut siv = cursive::default();
 
-    let theme_file = month_log::data_dir().join("6174").join("theme.toml");
+    let theme_file = month_log::data_dir()
+        .parent()
+        .unwrap()
+        .join("theme")
+        .join("theme.toml");
     if theme_file.exists() {
         siv.load_theme_file(theme_file)
             .expect("invalid theme.toml file");
@@ -181,7 +185,9 @@ fn show_about(s: &mut Cursive) {
         (for more info on customization, check 'https://tinyurl.com/fpc2yau2')",
             month_log::data_dir().to_str().unwrap(),
             month_log::data_dir()
-                .join("6174")
+                .parent()
+                .unwrap()
+                .join("theme")
                 .join("theme.toml")
                 .to_str()
                 .unwrap()

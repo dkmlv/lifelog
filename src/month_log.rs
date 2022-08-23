@@ -248,7 +248,7 @@ impl Entry {
 /// The folder structure will be sth like this:
 ///
 /// ```text
-/// lifelog
+/// ./lifelog/data
 /// ├── 2022
 /// │   ├── January.json
 /// │   ├── February.json
@@ -260,11 +260,10 @@ impl Entry {
 /// ```
 pub fn data_dir() -> PathBuf {
     let strategy = choose_base_strategy().expect("failed to find config directory");
-    let mut path = strategy.data_dir();
-    path.push("lifelog");
+    let path = strategy.data_dir().join("lifelog").join("data");
 
     if !path.exists() {
-        fs::create_dir(&path).expect("failed to create data directory");
+        fs::create_dir_all(&path).expect("failed to create data directory");
     }
     path
 }

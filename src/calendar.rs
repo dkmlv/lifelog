@@ -54,14 +54,13 @@ pub fn earliest_latest() -> (Date<Local>, Date<Local>) {
     years.sort();
 
     let earliest_date = match years.first() {
-        // '6174' is the folder that contains the custom user theme
-        Some(6174) | None => Local.ymd(current_year, current_month.into(), 1),
         Some(earliest_year) => {
             let earliest_month = *get_month_numbers(data_dir.join(earliest_year.to_string()))
                 .first()
                 .expect("earliest year directory is empty");
             Local.ymd(*earliest_year, earliest_month.into(), 1)
         }
+        None => Local.ymd(current_year, current_month.into(), 1),
     };
 
     (earliest_date, latest_date)
