@@ -1,6 +1,7 @@
 # lifelog
 
 A simple diary that you can use from your terminal.
+
 ![lifelog-demo](./assets/lifelog-demo.gif)
 
 ## Features
