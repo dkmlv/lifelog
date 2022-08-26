@@ -16,7 +16,7 @@ A simple diary that you can use from your terminal.
 You can download [an archived binary](https://github.com/DurbeKK/lifelog/releases) or use `cargo` to install `lifelog`:
 
 ```bash
-cargo install xkpass
+cargo install lifelog
 ```
 
 Alternatively, build from source:
